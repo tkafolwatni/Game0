@@ -1,109 +1,171 @@
-
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>شطرنج ملكي واقعي</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f1f1f1;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
-    h1 {
-      margin: 20px;
-    }
-    #board {
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      width: 320px;
-      height: 320px;
-      margin: auto;
-      border: 2px solid #333;
-    }
-    .square {
-      width: 100%;
-      height: 40px;
-      font-size: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .light { background-color: #f0d9b5; }
-    .dark { background-color: #b58863; }
-    .selected { outline: 2px solid red; }
-  </style>
-  <script src="chess.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Chess System</title>
+    <!-- Chessboard.js CSS من CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        #chessboard {
+            width: 400px;
+            margin: 20px;
+        }
+        #secret-system {
+            display: none;
+            background: #fff;
+            padding: 20px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            width: 400px;
+            max-width: 90%;
+        }
+        #chat-messages, #task-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        input, button {
+            margin: 5px;
+            padding: 8px;
+            width: 90%;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
 </head>
 <body>
-  <h1>الشطرنج الملكي ضد AI</h1>
-  <div id="board"></div>
-  <script>
-    const PIECES = {
-      p: "♟", r: "♜", n: "♞", b: "♝", q: "♛", k: "♚",
-      P: "♙", R: "♖", N: "♘", B: "♗", Q: "♕", K: "♔"
-    };
+    <h2>Secret Chess System</h2>
+    <div id="chessboard"></div>
+    <div id="secret-system">
+        <h3>Secret System Unlocked!</h3>
+        <div id="chat">
+            <h4>Chat</h4>
+            <div id="chat-messages"></div>
+            <input type="text" id="chat-input" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <div id="tasks">
+            <h4>Tasks</h4>
+            <div id="task-list"></div>
+            <input type="text" id="task-input" placeholder="Add a task...">
+            <button onclick="addTask()">Add Task</button>
+        </div>
+    </div>
 
-    const boardEl = document.getElementById("board");
-    const game = new Chess();
-    let selectedSquare = null;
+    <!-- مكتبات من CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
+    <script>
+        // تهيئة لعبة الشطرنج
+        const game = new Chess();
+        const board = Chessboard('chessboard', {
+            draggable: true,
+            position: 'start',
+            onDrop: onDrop
+        });
 
-    function drawBoard() {
-      boardEl.innerHTML = "";
-      const position = game.board();
-      for (let row = 7; row >= 0; row--) {
-        for (let col = 0; col < 8; col++) {
-          const square = document.createElement("div");
-          const isDark = (row + col) % 2 === 0;
-          square.className = "square " + (isDark ? "dark" : "light");
-          square.dataset.row = row;
-          square.dataset.col = col;
+        // كلمة السر: حركتان (e2 to e4, ثم e7 to e5)
+        const secretMoves = ['e2e4', 'e7e5'];
+        let moveHistory = [];
 
-          const piece = position[row][col];
-          if (piece) {
-            square.textContent = PIECES[piece.color === "w" ? piece.type : piece.type.toUpperCase()];
-          }
-
-          square.onclick = () => handleClick(row, col, square);
-          boardEl.appendChild(square);
+        // التحقق من الحركات
+        function onDrop(source, target) {
+            const move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q'
+            });
+            if (move === null) return 'snapback';
+            moveHistory.push(source + target);
+            checkSecret();
+            return move;
         }
-      }
-    }
 
-    function handleClick(row, col, square) {
-      const squareStr = "abcdefgh"[col] + (row + 1);
-      const piece = game.get(squareStr);
-
-      if (selectedSquare) {
-        const move = game.move({ from: selectedSquare, to: squareStr, promotion: "q" });
-
-        if (move) {
-          selectedSquare = null;
-          drawBoard();
-          setTimeout(aiMove, 400);
-        } else {
-          selectedSquare = null;
-          drawBoard();
+        // التحقق من كلمة السر
+        function checkSecret() {
+            if (moveHistory.length >= 2) {
+                const lastTwo = moveHistory.slice(-2).join('');
+                if (lastTwo === secretMoves.join('')) {
+                    document.getElementById('secret-system').style.display = 'block';
+                }
+            }
         }
-      } else if (piece && piece.color === "w" && game.turn() === "w") {
-        selectedSquare = squareStr;
-        drawBoard();
-        square.classList.add("selected");
-      }
-    }
 
-    function aiMove() {
-      if (game.game_over()) return;
-      const moves = game.moves();
-      const move = moves[Math.floor(Math.random() * moves.length)];
-      game.move(move);
-      drawBoard();
-    }
+        // إدارة الدردشة
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (message) {
+                const messages = document.getElementById('chat-messages');
+                const msgDiv = document.createElement('div');
+                msgDiv.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+                messages.appendChild(msgDiv);
+                messages.scrollTop = messages.scrollHeight;
+                saveChat();
+                input.value = '';
+            }
+        }
 
-    drawBoard();
-  </script>
+        // إدارة المهام
+        function addTask() {
+            const input = document.getElementById('task-input');
+            const task = input.value.trim();
+            if (task) {
+                const tasks = document.getElementById('task-list');
+                const taskDiv = document.createElement('div');
+                taskDiv.textContent = task;
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.style.width = 'auto';
+                deleteBtn.onclick = () => {
+                    tasks.removeChild(taskDiv);
+                    saveTasks();
+                };
+                taskDiv.appendChild(deleteBtn);
+                tasks.appendChild(taskDiv);
+                saveTasks();
+                input.value = '';
+            }
+        }
+
+        // حفظ البيانات في localStorage
+        function saveChat() {
+            const messages = document.getElementById('chat-messages').innerHTML;
+            localStorage.setItem('secretChat', messages);
+        }
+
+        function saveTasks() {
+            const tasks = document.getElementById('task-list').innerHTML;
+            localStorage.setItem('secretTasks', tasks);
+        }
+
+        // استرجاع البيانات
+        window.onload = () => {
+            const savedChat = localStorage.getItem('secretChat');
+            const savedTasks = localStorage.getItem('secretTasks');
+            if (savedChat) document.getElementById('chat-messages').innerHTML = savedChat;
+            if (savedTasks) document.getElementById('task-list').innerHTML = savedTasks;
+        };
+    </script>
 </body>
 </html>
