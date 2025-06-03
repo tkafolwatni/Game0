@@ -40,6 +40,7 @@
             margin: 5px;
             padding: 8px;
             width: 90%;
+            box-sizing: border-box;
         }
         button {
             background: #4CAF50;
@@ -50,11 +51,16 @@
         button:hover {
             background: #45a049;
         }
+        #status {
+            color: red;
+            margin: 10px;
+        }
     </style>
 </head>
 <body>
     <h2>Secret Chess System</h2>
     <div id="chessboard"></div>
+    <div id="status"></div>
     <div id="secret-system">
         <h3>Secret System Unlocked!</h3>
         <div id="chat">
@@ -81,24 +87,32 @@
         const board = Chessboard('chessboard', {
             draggable: true,
             position: 'start',
-            onDrop: onDrop
+            onDrop: onDrop,
+            onSnapEnd: onSnapEnd
         });
-
-        // كلمة السر: حركتان (e2 to e4, ثم e7 to e5)
+        const status = document.getElementById('status');
         const secretMoves = ['e2e4', 'e7e5'];
         let moveHistory = [];
 
-        // التحقق من الحركات
+        // التعامل مع الحركة
         function onDrop(source, target) {
             const move = game.move({
                 from: source,
                 to: target,
                 promotion: 'q'
             });
-            if (move === null) return 'snapback';
+            if (move === null) {
+                status.textContent = 'Invalid move! Try again.';
+                return 'snapback';
+            }
             moveHistory.push(source + target);
+            status.textContent = 'Move: ' + source + ' to ' + target;
             checkSecret();
-            return move;
+        }
+
+        // تحديث اللوحة بعد الحركة
+        function onSnapEnd() {
+            board.position(game.fen());
         }
 
         // التحقق من كلمة السر
@@ -107,6 +121,7 @@
                 const lastTwo = moveHistory.slice(-2).join('');
                 if (lastTwo === secretMoves.join('')) {
                     document.getElementById('secret-system').style.display = 'block';
+                    status.textContent = 'Secret system unlocked!';
                 }
             }
         }
@@ -133,7 +148,7 @@
             if (task) {
                 const tasks = document.getElementById('task-list');
                 const taskDiv = document.createElement('div');
-                taskDiv.textContent = task;
+                taskDiv.textContent = task + ' ';
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent = 'Delete';
                 deleteBtn.style.width = 'auto';
@@ -148,7 +163,7 @@
             }
         }
 
-        // حفظ البيانات في localStorage
+        // حفظ البيانات
         function saveChat() {
             const messages = document.getElementById('chat-messages').innerHTML;
             localStorage.setItem('secretChat', messages);
@@ -165,6 +180,7 @@
             const savedTasks = localStorage.getItem('secretTasks');
             if (savedChat) document.getElementById('chat-messages').innerHTML = savedChat;
             if (savedTasks) document.getElementById('task-list').innerHTML = savedTasks;
+            status.textContent = 'Play e2 to e4, then e7 to e5 to unlock!';
         };
     </script>
 </body>
