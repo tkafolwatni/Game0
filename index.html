@@ -28,6 +28,7 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
+            cursor: pointer;
         }
         .white { background: #f0d9b5; }
         .brown { background: #b58863; }
@@ -89,7 +90,7 @@
     </div>
 
     <script>
-        // تهيئة لوحة الشطرنج البسيطة
+        // تهيئة لوحة الشطرنج
         const chessboard = document.getElementById('chessboard');
         const pieces = {
             'wK': '♔', 'wQ': '♕', 'wR': '♖', 'wB': '♗', 'wN': '♘', 'wP': '♙',
@@ -112,29 +113,30 @@
                 square.className = 'square ' + ((i + j) % 2 === 0 ? 'white' : 'brown');
                 const piece = initialPosition[i][j];
                 if (piece) square.textContent = pieces[piece];
+                square.dataset.row = i;
+                square.dataset.col = j;
+                square.addEventListener('click', handleClick);
                 chessboard.appendChild(square);
             }
         }
 
-        // منطق الحركات (بسيط)
         let moveHistory = [];
-        chessboard.addEventListener('click', (e) => {
-            const squares = chessboard.getElementsByClassName('square');
-            let index = Array.from(squares).indexOf(e.target);
-            if (index === -1) return;
-            let row = Math.floor(index / 8);
-            let col = index % 8;
-            let move = `${String.fromCharCode(97 + col)}${8 - row}`;
+        const status = document.getElementById('status');
+
+        function handleClick(e) {
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+            const move = `${String.fromCharCode(97 + col)}${8 - row}`;
             moveHistory.push(move);
             status.textContent = `Move: ${move}`;
             checkSecret();
-        });
+        }
 
-        // التحقق من كلمة السر (e2e4, e7e5)
+        // التحقق من كلمة السر (e2 ثم e7)
         function checkSecret() {
             if (moveHistory.length >= 2) {
                 const lastTwo = moveHistory.slice(-2).join('');
-                if (lastTwo === 'e2e5') { // e2 ثم e7 (معدل لتناسب النقر)
+                if (lastTwo === 'e2e7') { // e2 (أسفل يسار) ثم e7 (أعلى يسار)
                     document.getElementById('secret-system').style.display = 'block';
                     status.textContent = 'Secret system unlocked!';
                 }
