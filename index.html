@@ -15,9 +15,22 @@
             padding: 20px;
         }
         #chessboard {
-            width: 400px;
+            width: 320px;
+            height: 320px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
             margin: 20px;
         }
+        .square {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .white { background: #f0d9b5; }
+        .brown { background: #b58863; }
         #secret-system {
             display: none;
             background: #fff;
@@ -75,50 +88,53 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
     <script>
-        // تهيئة لعبة الشطرنج
-        const game = new Chess();
-        const boardConfig = {
-            draggable: true,
-            position: 'start',
-            onDrop: onDrop,
-            onSnapEnd: onSnapEnd,
-            pieceTheme: 'https://chessboardjs.com/img/chesspieces/alpha/{piece}.png'
+        // تهيئة لوحة الشطرنج البسيطة
+        const chessboard = document.getElementById('chessboard');
+        const pieces = {
+            'wK': '♔', 'wQ': '♕', 'wR': '♖', 'wB': '♗', 'wN': '♘', 'wP': '♙',
+            'bK': '♚', 'bQ': '♛', 'bR': '♜', 'bB': '♝', 'bN': '♞', 'bP': '♟'
         };
-        const board = new ChessBoard('chessboard', boardConfig);
-        const status = document.getElementById('status');
-        const secretMoves = ['e2e4', 'e7e5'];
-        let moveHistory = [];
+        const initialPosition = [
+            ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
+            ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
+            ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
+        ];
 
-        // التعامل مع الحركة
-        function onDrop(source, target) {
-            const move = game.move({
-                from: source,
-                to: target,
-                promotion: 'q'
-            });
-            if (move === null) {
-                status.textContent = 'Invalid move! Try again.';
-                return 'snapback';
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                const square = document.createElement('div');
+                square.className = 'square ' + ((i + j) % 2 === 0 ? 'white' : 'brown');
+                const piece = initialPosition[i][j];
+                if (piece) square.textContent = pieces[piece];
+                chessboard.appendChild(square);
             }
-            moveHistory.push(source + target);
-            status.textContent = `Move: ${source} to ${target}`;
+        }
+
+        // منطق الحركات (بسيط)
+        let moveHistory = [];
+        chessboard.addEventListener('click', (e) => {
+            const squares = chessboard.getElementsByClassName('square');
+            let index = Array.from(squares).indexOf(e.target);
+            if (index === -1) return;
+            let row = Math.floor(index / 8);
+            let col = index % 8;
+            let move = `${String.fromCharCode(97 + col)}${8 - row}`;
+            moveHistory.push(move);
+            status.textContent = `Move: ${move}`;
             checkSecret();
-            board.position(game.fen());
-        }
+        });
 
-        // تحديث اللوحة
-        function onSnapEnd() {
-            board.position(game.fen());
-        }
-
-        // التحقق من كلمة السر
+        // التحقق من كلمة السر (e2e4, e7e5)
         function checkSecret() {
             if (moveHistory.length >= 2) {
                 const lastTwo = moveHistory.slice(-2).join('');
-                if (lastTwo === secretMoves.join('')) {
+                if (lastTwo === 'e2e5') { // e2 ثم e7 (معدل لتناسب النقر)
                     document.getElementById('secret-system').style.display = 'block';
                     status.textContent = 'Secret system unlocked!';
                 }
@@ -179,7 +195,7 @@
             const savedTasks = localStorage.getItem('secretTasks');
             if (savedChat) document.getElementById('chat-messages').innerHTML = savedChat;
             if (savedTasks) document.getElementById('task-list').innerHTML = savedTasks;
-            status.textContent = 'Play e2 to e4, then e7 to e5 to unlock!';
+            status.textContent = 'Click e2 (bottom-left), then e7 (top-left) to unlock!';
         };
     </script>
 </body>
