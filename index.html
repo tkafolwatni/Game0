@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secret Chess System</title>
-    <!-- Chessboard.js CSS من CDN -->
-    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -77,19 +75,19 @@
         </div>
     </div>
 
-    <!-- مكتبات من CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
     <script>
         // تهيئة لعبة الشطرنج
         const game = new Chess();
-        const board = Chessboard('chessboard', {
+        const boardConfig = {
             draggable: true,
             position: 'start',
             onDrop: onDrop,
-            onSnapEnd: onSnapEnd
-        });
+            onSnapEnd: onSnapEnd,
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/alpha/{piece}.png'
+        };
+        const board = new ChessBoard('chessboard', boardConfig);
         const status = document.getElementById('status');
         const secretMoves = ['e2e4', 'e7e5'];
         let moveHistory = [];
@@ -106,11 +104,12 @@
                 return 'snapback';
             }
             moveHistory.push(source + target);
-            status.textContent = 'Move: ' + source + ' to ' + target;
+            status.textContent = `Move: ${source} to ${target}`;
             checkSecret();
+            board.position(game.fen());
         }
 
-        // تحديث اللوحة بعد الحركة
+        // تحديث اللوحة
         function onSnapEnd() {
             board.position(game.fen());
         }
